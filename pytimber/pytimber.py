@@ -68,8 +68,19 @@ class LoggingDB(object):
     except NameError:
         print('ERROR: jpype is note defined!')
 
+    def _read_conf_file(self, conf_filename):
+        custom_conf={}
+        try:
+            with open(conf_filename, 'r') as f:
+                for line in f:
+                    (key, val) = line.strip().split('=')
+                    custom_conf[key]=val
+            return custom_conf
+        except OSError as e:
+            print('file '+ os.path.abspath(conf_filename) + ' not found, using default config',e)
+
     def __init__(self, appid='LHC_MD_ABP_ANALYSIS', clientid='BEAM PHYSICS',
-                 source='all', loglevel=None):
+                 source='all', loglevel=None, conf_filename='configuration.properties'):
         # Configure logging
         logging.basicConfig()
         self._log = logging.getLogger(__name__)
@@ -90,6 +101,18 @@ class LoggingDB(object):
         loc = {'mdb': DataLocPrefs.MDB_PRO,
                'ldb': DataLocPrefs.LDB_PRO,
                'all': DataLocPrefs.MDB_AND_LDB_PRO}[source]
+
+        if appid=='LHC_MD_ABP_ANALYSIS' or clientid=='BEAM PHYSICS':
+            custom_conf=self._read_conf_file(conf_filename)
+            if custom_conf:
+                appid=custom_conf['APPLICATION_NAME']
+                clientid=custom_conf['CLIENT_NAME']
+            else:
+                self._log.warning("Default appid and clientid selected, "\
+                 "this can result in poor performance.\n"
+                 "Set different appid/client values or include "
+                 "a configuration file (default name: 'configuration.properties')"
+                 "in order to suppress this message.")
 
         ServiceBuilder = (jpype.JPackage('cern').accsoft.cals.extr.client
                           .service.ServiceBuilder)
