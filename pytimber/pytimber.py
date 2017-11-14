@@ -77,7 +77,7 @@ class LoggingDB(object):
                     custom_conf[key]=val
             return custom_conf
         except OSError as e:
-            print('file '+ os.path.abspath(conf_filename) + ' not found, using default config',e)
+            self._log.debug('file '+ os.path.abspath(conf_filename) + ' not found, using default config',e)
 
     def __init__(self, appid='LHC_MD_ABP_ANALYSIS', clientid='BEAM PHYSICS',
                  source='all', loglevel=None, conf_filename='configuration.properties'):
@@ -105,10 +105,13 @@ class LoggingDB(object):
         if appid=='LHC_MD_ABP_ANALYSIS' or clientid=='BEAM PHYSICS':
             custom_conf=self._read_conf_file(conf_filename)
             if custom_conf:
-                appid=custom_conf['APPLICATION_NAME']
-                clientid=custom_conf['CLIENT_NAME']
+                try:
+                    appid=custom_conf['APPLICATION_NAME']
+                    clientid=custom_conf['CLIENT_NAME']
+                except KeyError:
+                    self._log.debug('appname and clientname not specified in config file')
             else:
-                self._log.warning("Default appid and clientid selected, "\
+                self._log.debug("Default appid and clientid selected, "\
                  "this can result in poor performance.\n"
                  "Set different appid/client values or include "
                  "a configuration file (default name: 'configuration.properties')"
